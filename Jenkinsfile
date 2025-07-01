@@ -15,11 +15,8 @@ pipeline {
     stage('Build docker image') {
       steps {
         powershell '''
-          # Disable BuildKit to avoid buildx errors
           $env:DOCKER_BUILDKIT=0
-
-          # Run docker build with resolved environment variable
-          docker build -t "$env:IMAGE_NAME:latest" .
+          docker build -t ${env.IMAGE_NAME}:latest .
         '''
       }
     }
@@ -32,8 +29,8 @@ pipeline {
           passwordVariable: 'DOCKER_PASS'
         )]) {
           powershell '''
-            docker login -u "$env:DOCKER_USER" --password-stdin <<< "$env:DOCKER_PASS"
-            docker push "$env:IMAGE_NAME:latest"
+            echo ${env.DOCKER_PASS} | docker login -u ${env.DOCKER_USER} --password-stdin
+            docker push ${env.IMAGE_NAME}:latest
             docker logout
           '''
         }
