@@ -1,34 +1,30 @@
 pipeline{
   agent any
+  environment{
+    IMAGE_NAME = 'johnclimie/test-django'
+  }
   stages{
     stage('Checkout'){
       steps{
-        git branch: 'main', url: 'https://github.com/Parth2k3/test-django'
-      }
-    }
-    stage('Login to ECR'){
-      steps{
-        withAWS(region: 'us-east-2', credentials: 'aws-creds'){
-          powershell '''
-          $password = aws ecr get-login-password --region us-east-2
-          docker login --username AWS --password $password 451947743265.dkr.ecr.us-east-2.amazonaws.com
-          '''
-        }
+        git branch: 'main', url: 'https://github.com/johnclimie/test-django'
       }
     }
     stage('Build docker image'){
       steps{
         powershell '''
-        docker build -t test:django .
-        docker tag test:django 451947743265.dkr.ecr.us-east-2.amazonaws.com/test:django
+        docker build -t ${IMAGE_NAME}:latest .
         '''
       }
     }
-    stage('Pushing image to ECR'){
+    stage('Push to dockerhub'){
       steps{
-        powershell '''
-        docker push 451947743265.dkr.ecr.us-east-2.amazonaws.com/test:django
-        '''
+        withCredentials([usernamePassword(credentialsId: 'docker', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]){
+          powershell '''
+          echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+          docker push ${IMAGE_NAME}:latest
+          docker logout
+          '''
+        }
       }
     }
   }
