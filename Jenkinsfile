@@ -14,10 +14,11 @@ pipeline {
 
     stage('Build docker image') {
       steps {
-        powershell '''
-          $env:DOCKER_BUILDKIT=0
-          docker build -t ${env.IMAGE_NAME}:latest .
-        '''
+        script {
+          // Groovy string interpolation happens here BEFORE it's passed to PowerShell
+          def imageTag = "${env.IMAGE_NAME}:latest"
+          powershell "docker build -t ${imageTag} ."
+        }
       }
     }
 
@@ -28,11 +29,14 @@ pipeline {
           usernameVariable: 'DOCKER_USER',
           passwordVariable: 'DOCKER_PASS'
         )]) {
-          powershell '''
-            echo ${env.DOCKER_PASS} | docker login -u ${env.DOCKER_USER} --password-stdin
-            docker push ${env.IMAGE_NAME}:latest
-            docker logout
-          '''
+          script {
+            def imageTag = "${env.IMAGE_NAME}:latest"
+            powershell """
+              echo $env:DOCKER_PASS | docker login -u $env:DOCKER_USER --password-stdin
+              docker push ${imageTag}
+              docker logout
+            """
+          }
         }
       }
     }
