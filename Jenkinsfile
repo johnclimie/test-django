@@ -15,14 +15,14 @@ pipeline {
     stage('Build docker image') {
       steps {
         powershell '''
-        # Disable BuildKit to prevent routing to buildx
-        $env:DOCKER_BUILDKIT=0
+          # Disable BuildKit to avoid buildx issues
+          $env:DOCKER_BUILDKIT=0
 
-        # Set image tag
-        $image = "$env:IMAGE_NAME:latest"
+          # Tag image
+          $image = "$env:IMAGE_NAME:latest"
 
-        # Run docker build with correct context
-        docker build -t $image .
+          # Build docker image
+          docker build -t $image .
         '''
       }
     }
@@ -33,4 +33,16 @@ pipeline {
           credentialsId: 'docker',
           usernameVariable: 'DOCKER_USER',
           passwordVariable: 'DOCKER_PASS'
-        )]
+        )]) {
+          powershell '''
+            $image = "$env:IMAGE_NAME:latest"
+
+            echo "$env:DOCKER_PASS" | docker login -u "$env:DOCKER_USER" --password-stdin
+            docker push $image
+            docker logout
+          '''
+        }
+      }
+    }
+  }
+}
