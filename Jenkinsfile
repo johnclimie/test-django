@@ -1,43 +1,24 @@
-pipeline {
+pipeline{
   agent any
-
-  environment {
-    IMAGE_NAME = 'johnclimie/test-django'
+  environment{
+    VENV = 'venv'
   }
-
-  stages {
-    stage('Checkout') {
-      steps {
+  stages{
+    stage('Checkout Out'){
+      steps{
         git branch: 'main', url: 'https://github.com/johnclimie/test-django'
       }
     }
-
-    stage('Build docker image') {
-      steps {
-        script {
-          // Groovy string interpolation happens here BEFORE it's passed to PowerShell
-          def imageTag = "${env.IMAGE_NAME}:latest"
-          powershell "docker build -t ${imageTag} ."
-        }
+    stage('Set up VENV'){
+      steps{
+        bat 'python -m venv %VENV%'
+        bat '%VENV%\\Scripts\\python -m pip install --upgrade pip'
+        bat '%VENV%\\Scripts\\pip install -r requirements.txt'
       }
     }
-
-    stage('Push to dockerhub') {
-      steps {
-        withCredentials([usernamePassword(
-          credentialsId: 'docker',
-          usernameVariable: 'DOCKER_USER',
-          passwordVariable: 'DOCKER_PASS'
-        )]) {
-          script {
-            def imageTag = "${env.IMAGE_NAME}:latest"
-            powershell """
-              echo $env:DOCKER_PASS | docker login -u $env:DOCKER_USER --password-stdin
-              docker push ${imageTag}
-              docker logout
-            """
-          }
-        }
+    stage('Run the tests'){
+      steps{
+        bat '%VENV%\\Scripts\\python manage.py test'
       }
     }
   }
