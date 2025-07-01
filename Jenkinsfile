@@ -6,7 +6,7 @@ pipeline{
         git branch: 'main', url: 'https://github.com/Parth2k3/test-django'
       }
     }
-    stage('Login to ECR){
+    stage('Login to ECR'){
       steps{
         wtihAWS(region: 'us-east-2', credentials: 'aws-creds'){
           powershell '''
