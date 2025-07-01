@@ -12,8 +12,8 @@ pipeline {
     stage('Build docker image') {
       steps {
         powershell '''
-        $tag = "$env:IMAGE_NAME:latest"
-        docker build -t $tag .
+        $image = "$env:IMAGE_NAME"
+        docker build -t "$image:latest" .
         '''
       }
     }
@@ -21,9 +21,9 @@ pipeline {
       steps {
         withCredentials([usernamePassword(credentialsId: 'docker', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
           powershell '''
-          $tag = "$env:IMAGE_NAME:latest"
+          $image = "$env:IMAGE_NAME"
           echo "$env:DOCKER_PASS" | docker login -u "$env:DOCKER_USER" --password-stdin
-          docker push $tag
+          docker push "$image:latest"
           docker logout
           '''
         }
